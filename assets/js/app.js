@@ -78,7 +78,7 @@
 
   /* ================= Confetti (canvas sendiri) ================= */
   var cv = $('#confetti'), cx = cv.getContext('2d'), parts = [], running = false;
-  var COLORS = ['#7C3AED', '#06B6D4', '#EC4899', '#10B981', '#F59E0B'];
+  var COLORS = ['#F7DC7C', '#E8BC48', '#D4955A', '#A0673D', '#7A4A2A'];
   function sizeCanvas() {
     var dpr = window.devicePixelRatio || 1;
     cv.width = window.innerWidth * dpr; cv.height = window.innerHeight * dpr;
@@ -343,7 +343,7 @@
       return { label: k.label, ok: k.kw.some(function (w) { return hasKw(text, w); }) };
     });
     var okCount = res.filter(function (r) { return r.ok; }).length, p = pct(okCount, res.length);
-    var color = p >= 80 ? 'var(--emerald)' : p >= 50 ? 'var(--amber)' : 'var(--rose)';
+    var color = p >= 80 ? 'var(--ok)' : p >= 50 ? 'var(--honey)' : 'var(--bad)';
     var msg = p >= 80 ? 'Mantap! Kata kunci pentingnya sudah masuk. Bandingkan dengan 🔑 Kunci Jawaban.'
       : p >= 50 ? 'Lumayan. Lengkapi kata kunci yang merah supaya jawabanmu utuh.'
       : 'Masih banyak yang terlewat. Buka 🧩 Pertanyaan Rinci dulu, lalu tulis ulang.';
