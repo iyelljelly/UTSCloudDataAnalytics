@@ -15,8 +15,11 @@ Tidak perlu install apa pun. Unduh/clone repo ini, lalu buka `index.html` di bro
 | ⚡ Drill | 113 soal pilihan ganda per modul, filter "pola soal ujian", streak, penjelasan, ulangi yang salah |
 | 🃏 Flashcard | 49 istilah dengan kartu flip 3D; kartu "Lupa" muncul lagi lebih cepat |
 | 📋 Contekan | Tabel "butuh apa, pakai apa" layanan AWS dengan mode tebak |
-| 📚 Materi | Ringkasan Modul 1-8 dengan mode tebak istilah |
+| 📚 Materi | Ringkasan Modul 1-8 dengan mode tebak istilah dan kamus istilah per modul |
+| 📖 Kamus | 200+ istilah, singkatan, dan layanan AWS lengkap dengan kepanjangan, fungsi singkat, dan contoh; bisa dicari |
 | 🏆 Progres | Kesiapan total dan per kisi-kisi UTS |
+
+Di seluruh website, istilah bergaris titik-titik bisa diklik untuk melihat kepanjangan dan fungsinya.
 
 ## Sumber materi
 
@@ -37,5 +40,6 @@ assets/js/data-alsut-b.js  soal ALSUT 6-10
 assets/js/data-kmg.js      soal KMG 1-6
 assets/js/data-drill.js    soal pilihan ganda
 assets/js/data-materi.js   flashcard + materi Modul 1-8
+assets/js/data-glosarium-*.js  kamus istilah (kepanjangan, fungsi, contoh)
 assets/js/app.js           semua interaksi
 ```

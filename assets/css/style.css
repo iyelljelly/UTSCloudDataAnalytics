@@ -562,3 +562,72 @@ html.dark .cloze { color: var(--accent-soft); }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* ===== Istilah yang bisa diklik ===== */
+.term, .term-demo {
+  cursor: help; border-bottom: 1.5px dotted rgba(var(--accent-rgb), .65);
+  text-decoration: none; transition: background .2s, border-color .2s; border-radius: 3px;
+}
+.term:hover, .term:focus-visible { background: rgba(var(--butter-rgb), .45); border-bottom-style: solid; outline: none; }
+.svc .term { border-bottom-color: currentColor; }
+.cloze.has-term { cursor: help; border-bottom: 1.5px dotted rgba(var(--accent-rgb), .65); }
+.cloze-test .cloze.has-term:not(.revealed) { cursor: pointer; border-bottom: 0; }
+.term-pop {
+  position: fixed; z-index: 90; padding: 14px 16px; border-radius: 16px; font-size: .88rem; line-height: 1.55;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  backdrop-filter: blur(20px) saturate(170%); -webkit-backdrop-filter: blur(20px) saturate(170%);
+  box-shadow: 0 22px 50px -14px rgba(var(--ink-rgb), .38);
+  border-top: 4px solid var(--butter-deep);
+}
+.term-pop p { margin: 6px 0 0; color: var(--text-2); }
+.tp-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; font-size: .98rem; }
+.tp-x { border: 0; background: none; color: var(--muted); font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 0 2px; }
+.tp-l { font-size: .8rem; font-weight: 700; color: var(--accent-soft); margin-top: 2px; }
+.tp-c, .tp-n { font-size: .82rem; }
+.tp-f { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-size: .78rem; }
+.tp-m { color: var(--muted); font-weight: 650; }
+.tp-more { font-weight: 750; color: var(--accent-soft); text-decoration: none; }
+.face-l { display: block; font-size: .82rem; font-weight: 800; color: var(--accent-soft); margin-bottom: 8px; }
+
+/* Daftar istilah di soal & modul */
+.term-list { margin: 6px 0 0; display: grid; gap: 6px; }
+.tl-row { padding: 9px 12px; border-radius: 12px; background: var(--surface-soft); border: 1px solid var(--border); }
+.tl-row dt { font-weight: 750; }
+.tl-row dd { margin: 2px 0 0; font-size: .88rem; color: var(--text-2); }
+.tl-l { font-weight: 600; font-size: .82rem; color: var(--accent-soft); }
+.mod-kamus { margin-top: 12px; border-radius: 12px; border: 1px dashed rgba(var(--accent-rgb), .35); padding: 8px 12px; background: rgba(var(--butter-rgb), .1); }
+.mod-kamus summary { cursor: pointer; font-weight: 750; padding: 4px 0; }
+.mod-kamus[open] summary { margin-bottom: 6px; }
+
+/* Contekan: kolom kepanjangan & fungsi */
+.ct-desc { font-size: .82rem; color: var(--text-2); transition: filter .35s, opacity .35s; }
+.ct-desc > div + div { margin-top: 4px; }
+.cloze-test tr:not(.rev) .ct-desc { filter: blur(5px); opacity: .45; user-select: none; }
+.ct-table td:first-child { width: 34%; }
+.ct-table td:nth-child(2) { width: 22%; }
+
+/* Kamus */
+.kamus-tools { display: grid; gap: 10px; padding: 14px; margin-bottom: 18px; position: sticky; top: 70px; z-index: 5; }
+.kamus-search {
+  width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--text); font: inherit; transition: border-color .2s, box-shadow .2s;
+}
+.kamus-search:focus { outline: none; border-color: rgba(var(--accent-rgb), .55); box-shadow: 0 0 0 4px rgba(var(--butter-rgb), .35); }
+.kamus-group { margin-bottom: 18px; }
+.kamus-h { font-size: 1.02rem; margin: 6px 0 10px; }
+.kamus-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.kcard {
+  padding: 13px 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); transition: transform .2s, box-shadow .2s;
+}
+.kcard:hover { transform: translateY(-2px); }
+.kcard.flash-hl { animation: hl 1.6s ease; }
+.kc-t { font-weight: 800; }
+.kc-l { font-size: .8rem; font-weight: 700; color: var(--accent-soft); }
+.kcard p { font-size: .87rem; color: var(--text-2); margin: 6px 0 0; }
+.kcard .kc-c { font-size: .82rem; }
+.kc-m { margin-top: 8px; font-size: .72rem; font-weight: 750; color: var(--muted); }
+@media (max-width: 640px) {
+  .kamus-tools { top: 96px; }
+  .ct-table td:first-child, .ct-table td:nth-child(2) { width: auto; }
+}

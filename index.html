@@ -23,6 +23,7 @@
       <a href="#flash">🃏 Flashcard</a>
       <a href="#contekan">📋 Contekan</a>
       <a href="#materi">📚 Materi</a>
+      <a href="#kamus">📖 Kamus</a>
       <a href="#progres">🏆 Progres</a>
     </nav>
     <div class="top-actions">
@@ -203,7 +204,7 @@
         <div class="sec-head reveal">
           <span class="eyebrow">Butuh apa, pakai apa</span>
           <h2>📋 Contekan kilat layanan AWS</h2>
-          <p>Kolom kanan disembunyikan. Tebak layanannya, lalu klik untuk membuka. Sering keluar sebagai jawaban "layanan AWS yang sesuai".</p>
+          <p>Kolom layanan disembunyikan. Tebak layanannya, lalu klik untuk membuka; kepanjangan dan fungsinya ikut muncul. Sering keluar sebagai jawaban "layanan AWS yang sesuai".</p>
         </div>
         <div class="toolbar reveal">
           <div class="chips">
@@ -215,7 +216,7 @@
         </div>
         <div class="glass ct-wrap reveal">
           <table class="tbl ct-table cloze-test" id="ctTable">
-            <thead><tr><th>Kalau butuh...</th><th>Pakai...</th></tr></thead>
+            <thead><tr><th>Kalau butuh...</th><th>Pakai...</th><th>Kepanjangan & fungsinya</th></tr></thead>
             <tbody id="ctBody"></tbody>
           </table>
         </div>
@@ -228,7 +229,7 @@
         <div class="sec-head reveal">
           <span class="eyebrow">Rangkuman super singkat</span>
           <h2>📚 Materi ringkas Modul 1-8</h2>
-          <p>Istilah berwarna ungu adalah stabilo dari rangkuman. Nyalakan Mode tebak untuk menyembunyikannya, lalu klik satu per satu.</p>
+          <p>Istilah berwarna adalah stabilo dari rangkuman. Istilah bergaris titik-titik bisa diklik untuk melihat kepanjangan dan fungsinya. Di akhir tiap modul ada <b>📖 Kamus istilah</b> modul itu. Nyalakan Mode tebak untuk menyembunyikan stabilo, lalu klik satu per satu.</p>
         </div>
         <div class="toolbar reveal">
           <div class="chips">
@@ -240,6 +241,23 @@
           <div class="timeline-fill" id="timelineFill"></div>
           <div id="materiList"></div>
         </div>
+      </div>
+    </section>
+
+    <!-- KAMUS -->
+    <section id="kamus">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Biar tidak salah sebut</span>
+          <h2>📖 Kamus istilah & layanan AWS</h2>
+          <p>Semua istilah, singkatan, dan layanan AWS yang muncul di materi, lengkap dengan <b>kepanjangan</b>, <b>fungsi singkat</b>, dan contoh pemakaiannya. Di seluruh website, istilah dengan <span class="term-demo">garis titik-titik</span> bisa diklik untuk membuka penjelasan ini.</p>
+        </div>
+        <div class="kamus-tools glass reveal">
+          <input type="search" id="kamusSearch" class="kamus-search" placeholder="🔍 Cari istilah, misalnya RDS, enkripsi, streaming, database..." aria-label="Cari istilah">
+          <div class="chips" id="kamusCats"></div>
+          <span class="muted" id="kamusCount"></span>
+        </div>
+        <div id="kamusList"></div>
       </div>
     </section>
 
@@ -277,6 +295,9 @@
   <script src="assets/js/data-kmg.js"></script>
   <script src="assets/js/data-drill.js"></script>
   <script src="assets/js/data-materi.js"></script>
+  <script src="assets/js/data-glosarium-a.js"></script>
+  <script src="assets/js/data-glosarium-b.js"></script>
+  <script src="assets/js/data-glosarium-c.js"></script>
   <script src="assets/js/app.js"></script>
 </body>
 </html>

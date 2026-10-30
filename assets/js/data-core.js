@@ -77,7 +77,7 @@ UTS.plan = [
   },
   {
     title: 'Hafalkan istilah dan layanan AWS',
-    desc: 'Flashcard istilah + Contekan Kilat "butuh apa, pakai apa".',
+    desc: 'Flashcard istilah, Contekan Kilat "butuh apa, pakai apa", dan Kamus untuk kepanjangan serta fungsi tiap layanan AWS.',
     href: '#flash', cta: 'Ke Flashcard'
   },
   {

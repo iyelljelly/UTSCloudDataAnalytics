@@ -19,6 +19,82 @@
   D.drill.forEach(function (q, i) { q.id = 'd' + i; });
   D.flash.forEach(function (c, i) { c.id = 'f' + i; });
 
+  /* ================= Kamus istilah: indeks & auto-link ================= */
+  var G = D.glosarium || [];
+  var GK = D.glosariumKategori || {};
+  var gById = {};
+  G.forEach(function (g, i) { g.id = 'g' + i; gById[g.id] = g; });
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
+  }
+  function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'); }
+  var gMap = {}, gPats = [];
+  G.forEach(function (g) {
+    [g.t].concat(g.a || []).forEach(function (p) {
+      var k = p.toLowerCase();
+      if (!gMap[k]) { gMap[k] = { g: g, p: p }; gPats.push(p); }
+    });
+  });
+  gPats.sort(function (a, b) { return b.length - a.length; });
+  var gRe = new RegExp('(^|[^A-Za-z0-9])(' + gPats.map(escRe).join('|') + ')(?![A-Za-z0-9])', 'gi');
+  function lookupTerm(word) {
+    var hit = gMap[word.toLowerCase()];
+    if (!hit || (hit.g.cs && word !== hit.p)) return null;
+    return hit.g;
+  }
+  // Membungkus istilah pertama di tiap blok teks dengan <span class="term">, tanpa menyentuh tag HTML dan isi cloze.
+  function linkify(html, seen) {
+    seen = seen || {};
+    var stack = [], skip = 0;
+    return String(html).split(/(<[^>]+>)/).map(function (seg) {
+      if (seg.charAt(0) === '<') {
+        if (/^<span\b/i.test(seg)) {
+          var isSkip = /class="(cloze|term)/.test(seg);
+          stack.push(isSkip); if (isSkip) skip++;
+        } else if (/^<\/span/i.test(seg)) {
+          if (stack.pop()) skip--;
+        }
+        return seg;
+      }
+      if (skip > 0 || !seg) return seg;
+      gRe.lastIndex = 0;
+      return seg.replace(gRe, function (m, pre, word) {
+        var g = lookupTerm(word);
+        if (!g || g.nolink || seen[g.id]) return m;
+        seen[g.id] = 1;
+        return pre + '<span class="term" tabindex="0" role="button" data-g="' + g.id + '">' + word + '</span>';
+      });
+    }).join('');
+  }
+  // Istilah yang distabilo (cloze) juga bisa dibuka penjelasannya jika ada di kamus.
+  function tagClozes(html) {
+    return html.replace(/<span class="cloze" tabindex="0" role="button">([^<]+)<\/span>/g, function (m, inner) {
+      var g = lookupTerm(inner.trim());
+      return g ? '<span class="cloze has-term" tabindex="0" role="button" data-g="' + g.id + '">' + inner + '</span>' : m;
+    });
+  }
+  function fmtL(s, seen) { return linkify(tagClozes(fmt(s)), seen); }
+  // Daftar istilah yang muncul di sebuah teks (untuk kotak "istilah di modul/soal ini").
+  function termsIn(text, extraIds) {
+    var found = {}, plain = String(text).replace(/<[^>]+>/g, ' ').replace(/\[\[|\]\]|==|\{\{|\}\}|\*\*/g, '');
+    gRe.lastIndex = 0;
+    var m;
+    while ((m = gRe.exec(plain))) {
+      var g = lookupTerm(m[2]);
+      if (g && !g.nolink) found[g.id] = g;
+      gRe.lastIndex = m.index + m[0].length;
+    }
+    (extraIds || []).forEach(function (g) { found[g.id] = g; });
+    return Object.keys(found).map(function (k) { return found[k]; })
+      .sort(function (a, b) { return a.t.localeCompare(b.t, 'id'); });
+  }
+  function termListHTML(list) {
+    return '<dl class="term-list">' + list.map(function (g) {
+      return '<div class="tl-row"><dt><span class="term" tabindex="0" role="button" data-g="' + g.id + '">' + esc(g.t) + '</span>' +
+        (g.l ? ' <span class="tl-l">(' + esc(g.l) + ')</span>' : '') + '</dt><dd>' + esc(g.f) + '</dd></div>';
+    }).join('') + '</dl>';
+  }
+
   /* ================= State (localStorage) ================= */
   var KEY = 'utsCDA.v1';
   function defaults() { return { essays: {}, drill: { best: 0, runs: 0, correct: {} }, flash: {}, plan: {}, theme: null }; }
@@ -170,7 +246,7 @@
     $$('.pipe').forEach(function (p, j) { p.classList.toggle('lit', j < i); });
     var p = D.pipeline[i], cap = $('#pipeCaption');
     cap.innerHTML = '<b>' + p.icon + ' ' + (i + 1) + '. ' + p.name + '</b> (' + p.air + ')<br>' + fmt(p.desc) +
-      '<div class="svc-list">' + p.svc.map(function (s) { return '<span class="svc">' + s + '</span>'; }).join('') + '</div>';
+      '<div class="svc-list">' + p.svc.map(function (s) { return '<span class="svc">' + linkify(s) + '</span>'; }).join('') + '</div>';
     restartAnim(cap, 'pop-in');
   }
   function countUp(el) {
@@ -249,16 +325,17 @@
 
   function essayHTML(e) {
     var st = state.essays[e.id] || {};
+    var eTerms = termsIn([e.question, e.tip].concat(e.rinci.map(function (r) { return r.q + ' ' + r.a; }), e.a.map(function (x) { return x.h + ' ' + x.b; })).join(' '));
     var kis = e.kisi.map(function (k) { return '<span class="kchip">Kisi ' + k + '</span>'; }).join(' · ');
     var rinci = e.rinci.map(function (r, i) {
       return '<div class="rinci-item" tabindex="0" role="button" aria-expanded="false" data-i="' + i + '">' +
         '<div class="rq"><span class="qn">' + (i + 1) + '</span><span>' + fmt(r.q) + '</span></div>' +
-        '<div class="ra"><div>' + fmt(r.a) + '</div></div></div>';
+        '<div class="ra"><div>' + fmtL(r.a) + '</div></div></div>';
     }).join('');
     var kunci = e.a.map(function (s) {
       return '<div class="ans-sec locked" tabindex="0" role="button" aria-label="Buka bagian jawaban"><div class="ans-h">' + fmt(s.h) +
         (s.filled ? '<span class="filled-badge" title="Bagian ini terpotong di PDF pembahasan, jadi dilengkapi dari Rangkuman Modul 1-8">Dilengkapi dari rangkuman</span>' : '') +
-        '</div><div class="ans-b"><div class="tbl-scroll">' + fmt(s.b) + '</div></div></div>';
+        '</div><div class="ans-b"><div class="tbl-scroll">' + fmtL(s.b) + '</div></div></div>';
     }).join('');
     return '<article class="essay glass reveal" id="essay-' + e.id + '" data-id="' + e.id + '">' +
       '<button class="essay-head" type="button" aria-expanded="false">' +
@@ -268,19 +345,21 @@
       '<span class="status-dot s-' + (st.status || 'none') + '" title="Status kesiapan"></span>' +
       '<span class="chev" aria-hidden="true">▾</span></button>' +
       '<div class="essay-body" hidden>' +
-      '<div class="question-box"><span class="label">Pertanyaan ' + e.region + ' #' + e.no + '</span><p>' + e.question + '</p></div>' +
+      '<div class="question-box"><span class="label">Pertanyaan ' + e.region + ' #' + e.no + '</span><p>' + fmtL(e.question) + '</p></div>' +
       '<div class="tabs" role="tablist">' +
       '<button class="tab active" type="button" role="tab" data-tab="rinci">🧩 Pertanyaan Rinci <em>' + e.rinci.length + '</em></button>' +
       '<button class="tab" type="button" role="tab" data-tab="latihan">✍️ Latihan Jawab</button>' +
-      '<button class="tab" type="button" role="tab" data-tab="kunci">🔑 Kunci Jawaban</button></div>' +
+      '<button class="tab" type="button" role="tab" data-tab="kunci">🔑 Kunci Jawaban</button>' +
+      '<button class="tab" type="button" role="tab" data-tab="istilah">📖 Istilah <em>' + eTerms.length + '</em></button></div>' +
       '<div class="panel" data-panel="rinci">' +
       '<p class="hint">Soal besar ini dipecah jadi pertanyaan kecil. Jawab di kepala dulu, lalu klik untuk mengecek.</p>' +
       '<div class="rinci-progress"><span class="rc">0</span>/' + e.rinci.length + ' dibuka <div class="bar"><i></i></div></div>' + rinci + '</div>' +
       '<div class="panel" data-panel="latihan" hidden>' +
-      '<div class="tip">🧭 <b>Kerangka jawaban:</b> ' + fmt(e.tip) + '</div>' +
+      '<div class="tip">🧭 <b>Kerangka jawaban:</b> ' + fmtL(e.tip) + '</div>' +
       '<textarea class="answer" placeholder="Tulis jawabanmu di sini seperti saat ujian..."></textarea>' +
       '<div class="row"><span class="muted wc">0 kata</span><button class="btn primary small btn-check" type="button">🔍 Cek kata kunci</button></div>' +
       '<div class="kw-result" hidden></div></div>' +
+      '<div class="panel" data-panel="istilah" hidden><p class="hint">Semua istilah & layanan yang muncul di soal ini, lengkap dengan kepanjangan dan fungsinya. Pakai saat menulis jawaban supaya tidak salah sebut.</p>' + termListHTML(eTerms) + '</div>' +
       '<div class="panel" data-panel="kunci" hidden>' +
       '<div class="row"><p class="hint">Tiap bagian tertutup. Tebak isinya dulu, baru klik untuk membuka.</p><button class="btn ghost small btn-openall" type="button">Buka semua</button></div>' + kunci + '</div>' +
       '<div class="rate"><span>Seberapa siap kamu menjawab soal ini di ujian?</span><div class="rate-btns">' +
@@ -508,14 +587,14 @@
       drill.score++; drill.streak++; drill.best = Math.max(drill.best, drill.streak);
       state.drill.correct[q.id] = true;
       fb.className = 'feedback good';
-      fb.innerHTML = '<b>✅ Benar!</b> ' + q.why;
+      fb.innerHTML = '<b>✅ Benar!</b> ' + linkify(esc(q.why));
       var st = $('#streak'); st.textContent = '🔥 ' + drill.streak; restartAnim(st, 'bump');
       if (drill.streak > 0 && drill.streak % 5 === 0) { confetti(80); toast('Streak ' + drill.streak + ' 🔥', 'Lanjutkan!'); }
     } else {
       drill.streak = 0;
       drill.wrong.push(q);
       fb.className = 'feedback bad';
-      fb.innerHTML = '<b>❌ Belum tepat.</b> Jawaban benar: <b>' + q.o[0] + '</b>. ' + q.why;
+      fb.innerHTML = '<b>❌ Belum tepat.</b> Jawaban benar: <b>' + esc(q.o[0]) + '</b>. ' + linkify(esc(q.why));
       restartAnim(btns[i], 'shake');
       $('#streak').textContent = '🔥 0';
     }
@@ -578,7 +657,8 @@
     flip.classList.remove('flipped');
     var apply = function () {
       $('#flashFront').textContent = c.f;
-      $('#flashBack').textContent = c.b;
+      var fg = lookupTerm(c.f);
+      $('#flashBack').innerHTML = (fg && fg.l ? '<span class="face-l">' + esc(c.f) + ' = ' + esc(fg.l) + '</span>' : '') + linkify(esc(c.b));
       $('#flashTagFront').textContent = 'Modul ' + c.m;
     };
     if (animate && !reduceMotion) { restartAnim(flip, 'swap'); setTimeout(apply, 160); } else apply();
@@ -618,7 +698,10 @@
   var ctRows = D.contekan.slice();
   function renderContekan() {
     $('#ctBody').innerHTML = ctRows.map(function (r) {
-      return '<tr><td>' + r.need + '</td><td><span class="cloze" tabindex="0" role="button">' + r.use + '</span></td></tr>';
+      var desc = termsIn(r.use).map(function (g) {
+        return '<div><b>' + esc(g.t) + '</b>' + (g.l ? ' <span class="tl-l">(' + esc(g.l) + ')</span>' : '') + ': ' + esc(g.f) + '</div>';
+      }).join('');
+      return '<tr><td>' + r.need + '</td><td><span class="cloze" tabindex="0" role="button">' + r.use + '</span></td><td class="ct-desc">' + desc + '</td></tr>';
     }).join('');
     updateCtCounter();
   }
@@ -631,6 +714,7 @@
     var c = e.target.closest('.cloze');
     if (!c || !$('#ctTable').classList.contains('cloze-test') || c.classList.contains('revealed')) return;
     c.classList.add('revealed');
+    c.closest('tr').classList.add('rev');
     updateCtCounter();
     if ($$('#ctBody .cloze.revealed').length === ctRows.length) { confetti(120); toast('Contekan tuntas 📋', 'Coba acak lalu ulangi tanpa melihat.'); }
   });
@@ -642,17 +726,23 @@
     updateCtCounter();
   });
   $('#ctShuffle').addEventListener('click', function () { ctRows = shuffle(ctRows); renderContekan(); toast('Urutan diacak 🔀'); });
-  $('#ctReset').addEventListener('click', function () { $$('#ctBody .cloze').forEach(function (c) { c.classList.remove('revealed'); }); updateCtCounter(); });
+  $('#ctReset').addEventListener('click', function () { $$('#ctBody .cloze').forEach(function (c) { c.classList.remove('revealed'); c.closest('tr').classList.remove('rev'); }); updateCtCounter(); });
 
   /* ================= Materi ================= */
   function renderMateri() {
     $('#materiList').innerHTML = D.materi.map(function (m) {
+      var seen = {};
+      var all = [m.intinya, m.analogi || '', m.table || '', m.ingat || ''].concat(m.points).join(' ');
+      var tagged = G.filter(function (g) { return (g.m || []).indexOf(m.no) !== -1 && !g.nolink; });
+      var mTerms = termsIn(all, tagged);
       return '<article class="mod glass reveal" id="modul-' + m.no + '" data-no="' + m.no + '">' +
         '<h3>Modul ' + m.no + ': ' + m.title + '</h3>' +
-        '<div class="mod-intinya"><p><b>Intinya:</b> ' + fmt(m.intinya) + '</p>' + (m.analogi ? '<p><b>Perumpamaan:</b> ' + fmt(m.analogi) + '</p>' : '') + '</div>' +
-        (m.table ? '<div class="tbl-scroll">' + fmt(m.table) + '</div>' : '') +
-        '<ul>' + m.points.map(function (p) { return '<li>' + fmt(p) + '</li>'; }).join('') + '</ul>' +
-        (m.ingat ? '<div class="mod-ingat">🎯 <b>Ingat buat ujian:</b> ' + fmt(m.ingat) + '</div>' : '') + '</article>';
+        '<div class="mod-intinya"><p><b>Intinya:</b> ' + fmtL(m.intinya, seen) + '</p>' + (m.analogi ? '<p><b>Perumpamaan:</b> ' + fmtL(m.analogi, seen) + '</p>' : '') + '</div>' +
+        (m.table ? '<div class="tbl-scroll">' + fmtL(m.table, seen) + '</div>' : '') +
+        '<ul>' + m.points.map(function (p) { return '<li>' + fmtL(p, seen) + '</li>'; }).join('') + '</ul>' +
+        (m.ingat ? '<div class="mod-ingat">🎯 <b>Ingat buat ujian:</b> ' + fmtL(m.ingat, seen) + '</div>' : '') +
+        (mTerms.length ? '<details class="mod-kamus"><summary>📖 Kamus istilah Modul ' + m.no + ' <span class="muted">(' + mTerms.length + ' istilah: kepanjangan & fungsi)</span></summary>' + termListHTML(mTerms) + '</details>' : '') +
+        '</article>';
     }).join('');
     $('#mtJump').innerHTML = D.materi.map(function (m) { return '<a class="chip" href="#modul-' + m.no + '">M' + m.no + '</a>'; }).join('');
     observeReveals($('#materiList'));
@@ -669,6 +759,115 @@
     if (c && $('#materiList').classList.contains('cloze-test')) c.classList.add('revealed');
   });
   $('#materiList').addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.cloze')) { e.preventDefault(); e.target.click(); } });
+
+  /* ================= Popup istilah ================= */
+  var pop = document.createElement('div');
+  pop.className = 'term-pop';
+  pop.setAttribute('role', 'dialog');
+  pop.hidden = true;
+  document.body.appendChild(pop);
+  var popFor = null;
+  function showPop(el) {
+    var g = gById[el.dataset.g];
+    if (!g) return;
+    if (popFor === el && !pop.hidden) { hidePop(); return; }
+    popFor = el;
+    var mods = (g.m || []).length ? '<span class="tp-m">Modul ' + g.m.join(', ') + '</span>' : '';
+    pop.innerHTML = '<div class="tp-h"><b>' + esc(g.t) + '</b><button class="tp-x" type="button" aria-label="Tutup">×</button></div>' +
+      (g.l ? '<div class="tp-l">Kepanjangan: ' + esc(g.l) + '</div>' : '') +
+      '<p>' + esc(g.f) + '</p>' +
+      (g.c ? '<p class="tp-c">💡 Contoh: ' + esc(g.c) + '</p>' : '') +
+      (g.n ? '<p class="tp-n">ℹ️ ' + esc(g.n) + '</p>' : '') +
+      '<div class="tp-f">' + mods + '<a href="#istilah-' + g.id + '" class="tp-more" data-go="' + g.id + '">Buka di kamus →</a></div>';
+    pop.hidden = false;
+    var r = el.getBoundingClientRect(), w = Math.min(330, window.innerWidth - 24);
+    pop.style.width = w + 'px';
+    var left = Math.max(12, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 12));
+    var h = pop.offsetHeight, top = r.bottom + 8;
+    if (top + h > window.innerHeight - 10) top = Math.max(10, r.top - h - 8);
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    restartAnim(pop, 'pop-in');
+  }
+  function hidePop() { pop.hidden = true; popFor = null; }
+  // Fase capture: klik istilah tidak ikut membuka/menutup kartu di belakangnya.
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('.term');
+    if (t) { e.preventDefault(); e.stopPropagation(); showPop(t); return; }
+    // Stabilo yang ada di kamus: buka penjelasan, kecuali sedang Mode tebak dan belum dibuka.
+    var cz = e.target.closest('.cloze.has-term');
+    if (cz && (!cz.closest('.cloze-test') || cz.classList.contains('revealed'))) {
+      e.preventDefault(); e.stopPropagation(); showPop(cz); return;
+    }
+    if (e.target.closest('.tp-x')) { hidePop(); return; }
+    var go = e.target.closest('.tp-more');
+    if (go) { e.preventDefault(); hidePop(); goToTerm(go.dataset.go); return; }
+    if (!e.target.closest('.term-pop')) hidePop();
+  }, true);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') hidePop();
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.term')) {
+      e.preventDefault(); e.stopPropagation(); showPop(e.target);
+    }
+  }, true);
+  window.addEventListener('scroll', function () { if (!pop.hidden) hidePop(); }, { passive: true });
+
+  /* ================= Kamus istilah ================= */
+  var kamusCat = 'all';
+  function renderKamus() {
+    var order = Object.keys(GK);
+    var html = order.map(function (k) {
+      var list = G.filter(function (g) { return g.k === k; }).sort(function (a, b) { return a.t.localeCompare(b.t, 'id'); });
+      if (!list.length) return '';
+      return '<div class="kamus-group" data-k="' + k + '"><h3 class="kamus-h">' + GK[k] + ' <span class="muted">(' + list.length + ')</span></h3><div class="kamus-grid">' +
+        list.map(function (g) {
+          var hay = norm([g.t, g.l || '', g.f, (g.a || []).join(' ')].join(' '));
+          return '<article class="kcard" id="istilah-' + g.id + '" data-hay="' + esc(hay) + '">' +
+            '<div class="kc-t">' + esc(g.t) + '</div>' +
+            (g.l ? '<div class="kc-l">' + esc(g.l) + '</div>' : '') +
+            '<p>' + esc(g.f) + '</p>' +
+            (g.c ? '<p class="kc-c">💡 ' + esc(g.c) + '</p>' : '') +
+            (g.n ? '<p class="kc-c">ℹ️ ' + esc(g.n) + '</p>' : '') +
+            ((g.m || []).length ? '<div class="kc-m">Modul ' + g.m.join(', ') + '</div>' : '') + '</article>';
+        }).join('') + '</div></div>';
+    }).join('');
+    $('#kamusList').innerHTML = html;
+    $('#kamusCats').innerHTML = '<button class="chip active" type="button" data-k="all">Semua (' + G.length + ')</button>' +
+      order.filter(function (k) { return G.some(function (g) { return g.k === k; }); }).map(function (k) {
+        return '<button class="chip" type="button" data-k="' + k + '">' + GK[k] + '</button>';
+      }).join('');
+    filterKamus();
+  }
+  function filterKamus() {
+    var q = norm($('#kamusSearch').value).trim(), shown = 0;
+    $$('.kamus-group').forEach(function (grp) {
+      var okCat = kamusCat === 'all' || grp.dataset.k === kamusCat, n = 0;
+      $$('.kcard', grp).forEach(function (c) {
+        var ok = okCat && (!q || c.dataset.hay.indexOf(q) !== -1);
+        c.hidden = !ok; if (ok) n++;
+      });
+      grp.hidden = n === 0; shown += n;
+    });
+    $('#kamusCount').textContent = shown ? shown + ' istilah ditampilkan' : 'Tidak ada istilah yang cocok. Coba kata lain, misalnya "database" atau "enkripsi".';
+  }
+  $('#kamusSearch').addEventListener('input', filterKamus);
+  $('#kamusCats').addEventListener('click', function (e) {
+    var c = e.target.closest('.chip');
+    if (!c) return;
+    kamusCat = c.dataset.k;
+    $$('#kamusCats .chip').forEach(function (x) { x.classList.toggle('active', x === c); });
+    filterKamus();
+  });
+  function goToTerm(id) {
+    $('#kamusSearch').value = '';
+    kamusCat = 'all';
+    $$('#kamusCats .chip').forEach(function (x) { x.classList.toggle('active', x.dataset.k === 'all'); });
+    filterKamus();
+    var card = $('#istilah-' + id);
+    if (!card) return;
+    card.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+    restartAnim(card, 'flash-hl');
+  }
 
   /* ================= Progres ================= */
   function essayScore(list) {
@@ -808,6 +1007,7 @@
   initFlash();
   renderContekan();
   renderMateri();
+  renderKamus();
   renderProgress();
   observeReveals(document);
   onScroll();
