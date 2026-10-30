@@ -16,7 +16,7 @@ Tidak perlu install apa pun. Unduh/clone repo ini, lalu buka `index.html` di bro
 | 🃏 Flashcard | 49 istilah dengan kartu flip 3D; kartu "Lupa" muncul lagi lebih cepat |
 | 📋 Contekan | Tabel "butuh apa, pakai apa" layanan AWS dengan mode tebak |
 | 📚 Materi | Ringkasan Modul 1-8 dengan mode tebak istilah dan kamus istilah per modul |
-| 📖 Kamus | 200+ istilah, singkatan, dan layanan AWS lengkap dengan kepanjangan, fungsi singkat, dan contoh; bisa dicari |
+| 📖 Kamus | 194 istilah, singkatan, dan layanan AWS lengkap dengan kepanjangan, fungsi singkat, dan contoh; bisa dicari |
 | 🏆 Progres | Kesiapan total dan per kisi-kisi UTS |
 
 Di seluruh website, istilah bergaris titik-titik bisa diklik untuk melihat kepanjangan dan fungsinya.
