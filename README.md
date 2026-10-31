@@ -1,12 +1,17 @@
 # UTSCloudDataAnalytics
 
-Website belajar interaktif untuk UTS **Cloud Data Analytics** (AWS Academy Data Engineering Modul 1-8).
+Website belajar interaktif untuk UTS, dengan pemilih mata kuliah di bagian atas:
+
+- 🤖 **Cloud Machine Learning** (AWS Academy Machine Learning Foundations, Session 1-14): 10 soal KMG (Latihan UTS + kunci dosen, termasuk studi kasus QuickShip Logistics) dan 15 soal Quiz ALS.
+- ☁️ **Cloud Data Analytics** (AWS Academy Data Engineering Modul 1-8): 10 soal ALSUT dan 6 soal Quiz KMG.
+
+Progres tiap mata kuliah disimpan terpisah. Link langsung ke satu mata kuliah: `index.html?c=cml` atau `index.html?c=cda`.
 
 ## Cara membuka
 
 Tidak perlu install apa pun. Unduh/clone repo ini, lalu buka `index.html` di browser (Chrome, Edge, Safari, atau Firefox). Progres belajar tersimpan otomatis di browser yang sama (localStorage).
 
-## Isi website
+## Isi website (sama untuk tiap mata kuliah)
 
 | Bagian | Isi |
 | --- | --- |
@@ -34,12 +39,11 @@ Beberapa jawaban di file pembahasan terpotong di PDF. Bagian itu dilengkapi dari
 ```
 index.html
 assets/css/style.css
-assets/js/data-core.js     kisi-kisi, pipeline, rencana, contekan
-assets/js/data-alsut-a.js  soal ALSUT 1-5
-assets/js/data-alsut-b.js  soal ALSUT 6-10
-assets/js/data-kmg.js      soal KMG 1-6
-assets/js/data-drill.js    soal pilihan ganda
-assets/js/data-materi.js   flashcard + materi Modul 1-8
-assets/js/data-glosarium-*.js  kamus istilah (kepanjangan, fungsi, contoh)
-assets/js/app.js           semua interaksi
+assets/js/courses.js        daftar mata kuliah + pemuat data course aktif
+assets/js/app.js            semua interaksi (dipakai semua course)
+assets/js/cml/              data Cloud Machine Learning (soal KMG & ALS, drill, materi, kamus ML)
+assets/js/cda/              data Cloud Data Analytics
+assets/js/shared/           kamus umum layanan AWS & konsep data (dipakai bersama)
 ```
+
+Untuk menambah mata kuliah baru: buat folder data baru dengan `UTS.meta`, lalu daftarkan file-filenya di `courses.js`.

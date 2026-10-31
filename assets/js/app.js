@@ -1,4 +1,5 @@
-/* Logika website belajar UTS Cloud Data Analytics. Tanpa dependensi eksternal. */
+/* Logika website belajar UTS (multi mata kuliah). Tanpa dependensi eksternal.
+ * Data course aktif dimuat lebih dulu oleh courses.js ke window.UTS; teks khusus course ada di UTS.meta. */
 (function () {
   'use strict';
 
@@ -9,9 +10,17 @@
   var $$ = function (s, el) { return Array.prototype.slice.call((el || document).querySelectorAll(s)); };
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Urutan: ALSUT dulu (soal latihan UTS dosen), lalu KMG.
+  var META = D.meta || {};
+  var MK = META.moduleKey || 'm';
+  var COURSES = window.UTS_COURSES || {};
+  var COURSE = window.UTS_COURSE || META.course || '';
+  var REGION_ORDER = META.regionOrder || [];
+  // Urutan soal: region prioritas (soal latihan UTS dosen) dulu, lalu nomor soal.
   D.essays.sort(function (a, b) {
-    if (a.region !== b.region) return a.region === 'ALSUT' ? -1 : 1;
+    if (a.region !== b.region) {
+      var ia = REGION_ORDER.indexOf(a.region), ib = REGION_ORDER.indexOf(b.region);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    }
     return a.no - b.no;
   });
   var essayById = {};
@@ -20,23 +29,32 @@
   D.flash.forEach(function (c, i) { c.id = 'f' + i; });
 
   /* ================= Kamus istilah: indeks & auto-link ================= */
-  var G = D.glosarium || [];
   var GK = D.glosariumKategori || {};
+  // Entri milik course (own) didahulukan, lalu nama kembar dibuang supaya tiap istilah cuma satu definisi.
+  var G = (D.glosarium || []).filter(function (g) { return g.own; })
+    .concat((D.glosarium || []).filter(function (g) { return !g.own; }));
+  var seenT = {};
+  G = G.filter(function (g) { var k = g.t.toLowerCase(); if (seenT[k]) return false; seenT[k] = 1; return true; });
   var gById = {};
-  G.forEach(function (g, i) { g.id = 'g' + i; gById[g.id] = g; });
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
   }
   function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'); }
-  var gMap = {}, gPats = [];
-  G.forEach(function (g) {
-    [g.t].concat(g.a || []).forEach(function (p) {
-      var k = p.toLowerCase();
-      if (!gMap[k]) { gMap[k] = { g: g, p: p }; gPats.push(p); }
+  var gMap, gRe;
+  function buildIndex(list) {
+    gById = {}; gMap = {};
+    var pats = [];
+    list.forEach(function (g, i) {
+      g.id = 'g' + i; gById[g.id] = g;
+      [g.t].concat(g.a || []).forEach(function (p) {
+        var k = p.toLowerCase();
+        if (!gMap[k]) { gMap[k] = { g: g, p: p }; pats.push(p); }
+      });
     });
-  });
-  gPats.sort(function (a, b) { return b.length - a.length; });
-  var gRe = new RegExp('(^|[^A-Za-z0-9])(' + gPats.map(escRe).join('|') + ')(?![A-Za-z0-9])', 'gi');
+    pats.sort(function (a, b) { return b.length - a.length; });
+    gRe = new RegExp('(^|[^A-Za-z0-9])(' + pats.map(escRe).join('|') + ')(?![A-Za-z0-9])', 'gi');
+  }
+  buildIndex(G);
   function lookupTerm(word) {
     var hit = gMap[word.toLowerCase()];
     if (!hit || (hit.g.cs && word !== hit.p)) return null;
@@ -48,6 +66,8 @@
     var stack = [], skip = 0;
     return String(html).split(/(<[^>]+>)/).map(function (seg) {
       if (seg.charAt(0) === '<') {
+        if (/^<(code|pre)\b/i.test(seg)) { stack.push(true); skip++; return seg; }
+        if (/^<\/(code|pre)/i.test(seg)) { if (stack.pop()) skip--; return seg; }
         if (/^<span\b/i.test(seg)) {
           var isSkip = /class="(cloze|term)/.test(seg);
           stack.push(isSkip); if (isSkip) skip++;
@@ -60,7 +80,7 @@
       gRe.lastIndex = 0;
       return seg.replace(gRe, function (m, pre, word) {
         var g = lookupTerm(word);
-        if (!g || g.nolink || seen[g.id]) return m;
+        if (!g || g.nolink || g.quiet || seen[g.id]) return m;
         seen[g.id] = 1;
         return pre + '<span class="term" tabindex="0" role="button" data-g="' + g.id + '">' + word + '</span>';
       });
@@ -88,6 +108,17 @@
     return Object.keys(found).map(function (k) { return found[k]; })
       .sort(function (a, b) { return a.t.localeCompare(b.t, 'id'); });
   }
+  // Kamus umum (shared) hanya dipakai untuk istilah yang memang muncul di materi course ini.
+  if (META.glossaryFromContent) {
+    var exclude = META.glossaryExcludeShared || [];
+    var corpus = JSON.stringify([D.essays, D.drill, D.flash, D.materi, D.contekan, D.pipeline, UTS_caseText()]);
+    var used = {};
+    termsIn(corpus.replace(/\\n/g, ' ')).forEach(function (g) { used[g.id] = 1; });
+    G = G.filter(function (g) { return g.own || (used[g.id] && exclude.indexOf(g.k) === -1); });
+    buildIndex(G);
+  }
+  function UTS_caseText() { return D.caseQuickShip || ''; }
+  function mods(g) { return g[MK] || []; }
   function termListHTML(list) {
     return '<dl class="term-list">' + list.map(function (g) {
       return '<div class="tl-row"><dt><span class="term" tabindex="0" role="button" data-g="' + g.id + '">' + esc(g.t) + '</span>' +
@@ -96,7 +127,7 @@
   }
 
   /* ================= State (localStorage) ================= */
-  var KEY = 'utsCDA.v1';
+  var KEY = META.storageKey || ('uts.' + COURSE + '.v1');
   function defaults() { return { essays: {}, drill: { best: 0, runs: 0, correct: {} }, flash: {}, plan: {}, theme: null }; }
   var state = defaults();
   try {
@@ -205,10 +236,13 @@
     document.documentElement.classList.toggle('dark', t === 'dark');
     $('#themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
   }
-  applyTheme(state.theme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+  var savedTheme = null;
+  try { savedTheme = localStorage.getItem('utsTheme'); } catch (e) { /* mode privat */ }
+  applyTheme(savedTheme || state.theme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
   $('#themeBtn').addEventListener('click', function () {
-    state.theme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
-    applyTheme(state.theme); save();
+    var t = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+    try { localStorage.setItem('utsTheme', t); } catch (e) { /* mode privat */ }
+    applyTheme(t);
   });
 
   /* ================= Hero: pipeline air ================= */
@@ -225,6 +259,7 @@
       if (el) { el.dataset.count = counts[k]; el.classList.add('count'); }
     });
     var wrap = $('#pipeline');
+    wrap.classList.toggle('many', D.pipeline.length > 4);
     wrap.innerHTML = D.pipeline.map(function (p, i) {
       return (i ? '<div class="pipe"><span></span></div>' : '') +
         '<button class="pnode" type="button" data-i="' + i + '"><span class="pico">' + p.icon + '</span><b>' + p.name + '</b><small>' + p.air + '</small></button>';
@@ -290,7 +325,7 @@
   function renderKisi() {
     $('#kisiGrid').innerHTML = D.kisi.map(function (k, i) {
       return '<button class="kisi-card reveal" type="button" data-k="' + k.id + '" style="--d:' + (i * 90) + 'ms">' +
-        '<span class="kisi-no">Kisi-kisi ' + k.id + '</span><h3>' + k.title + '</h3>' +
+        '<span class="kisi-no">' + (META.kisiWord || 'Kisi-kisi') + ' ' + k.id + '</span><h3>' + k.title + '</h3>' +
         '<p class="kisi-mod">' + k.modul + '</p><p class="kisi-konsep">' + k.konsep + '</p>' +
         '<div class="kisi-soal">' + k.soal.map(function (id) {
           var e = essayById[id];
@@ -306,7 +341,8 @@
     filter.kisi = filter.kisi === k ? null : k;
     $$('.kisi-card').forEach(function (x) { x.classList.toggle('active', +x.dataset.k === filter.kisi); });
     renderEssayList();
-    toast(filter.kisi ? 'Filter: Kisi-kisi ' + k : 'Filter kisi-kisi dimatikan', filter.kisi ? D.kisi[k - 1].title : 'Menampilkan semua soal.');
+    var kw = META.kisiWord || 'Kisi-kisi';
+    toast(filter.kisi ? 'Filter: ' + kw + ' ' + k : 'Filter ' + kw.toLowerCase() + ' dimatikan', filter.kisi ? D.kisi[k - 1].title : 'Menampilkan semua soal.');
     $('#regionChips').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
   });
   $('#regionChips').addEventListener('click', function (e) {
@@ -325,8 +361,8 @@
 
   function essayHTML(e) {
     var st = state.essays[e.id] || {};
-    var eTerms = termsIn([e.question, e.tip].concat(e.rinci.map(function (r) { return r.q + ' ' + r.a; }), e.a.map(function (x) { return x.h + ' ' + x.b; })).join(' '));
-    var kis = e.kisi.map(function (k) { return '<span class="kchip">Kisi ' + k + '</span>'; }).join(' · ');
+    var eTerms = termsIn([e.case || '', e.question, e.tip].concat(e.rinci.map(function (r) { return r.q + ' ' + r.a; }), e.a.map(function (x) { return x.h + ' ' + x.b; })).join(' '));
+    var kis = e.kisi.map(function (k) { return '<span class="kchip">' + (META.kisiShort || 'Kisi') + ' ' + k + '</span>'; }).join(' · ');
     var rinci = e.rinci.map(function (r, i) {
       return '<div class="rinci-item" tabindex="0" role="button" aria-expanded="false" data-i="' + i + '">' +
         '<div class="rq"><span class="qn">' + (i + 1) + '</span><span>' + fmt(r.q) + '</span></div>' +
@@ -334,18 +370,19 @@
     }).join('');
     var kunci = e.a.map(function (s) {
       return '<div class="ans-sec locked" tabindex="0" role="button" aria-label="Buka bagian jawaban"><div class="ans-h">' + fmt(s.h) +
-        (s.filled ? '<span class="filled-badge" title="Bagian ini terpotong di PDF pembahasan, jadi dilengkapi dari Rangkuman Modul 1-8">Dilengkapi dari rangkuman</span>' : '') +
+        (s.filled ? '<span class="filled-badge" title="' + esc(META.filledTitle || 'Dilengkapi dari rangkuman') + '">Dilengkapi dari rangkuman</span>' : '') +
         '</div><div class="ans-b"><div class="tbl-scroll">' + fmtL(s.b) + '</div></div></div>';
     }).join('');
     return '<article class="essay glass reveal" id="essay-' + e.id + '" data-id="' + e.id + '">' +
       '<button class="essay-head" type="button" aria-expanded="false">' +
       '<span class="essay-no ' + e.region.toLowerCase() + '">' + e.region + ' #' + e.no + '</span>' +
       '<span class="essay-title">' + e.title + '<small>' + e.modul + ' · ' + kis + '</small></span>' +
-      (e.region === 'ALSUT' ? '<span class="hot" title="Sama persis dengan Soal Latihan UTS dari dosen">🔥</span>' : '') +
+      (e.region === META.hotRegion ? '<span class="hot" title="' + esc(META.hotTitle || '') + '">🔥</span>' : '') +
       '<span class="status-dot s-' + (st.status || 'none') + '" title="Status kesiapan"></span>' +
       '<span class="chev" aria-hidden="true">▾</span></button>' +
       '<div class="essay-body" hidden>' +
-      '<div class="question-box"><span class="label">Pertanyaan ' + e.region + ' #' + e.no + '</span><p>' + fmtL(e.question) + '</p></div>' +
+      (e.case ? '<div class="case-box">' + fmtL(e.case) + '</div>' : '') +
+      '<div class="question-box"><span class="label">Pertanyaan ' + e.region + ' #' + e.no + '</span><div class="q-text">' + fmtL(e.question) + '</div></div>' +
       '<div class="tabs" role="tablist">' +
       '<button class="tab active" type="button" role="tab" data-tab="rinci">🧩 Pertanyaan Rinci <em>' + e.rinci.length + '</em></button>' +
       '<button class="tab" type="button" role="tab" data-tab="latihan">✍️ Latihan Jawab</button>' +
@@ -446,9 +483,9 @@
     var e = essayById[id];
     if (s === 'siap') {
       confetti(70);
-      var allAlsut = D.essays.filter(function (x) { return x.region === 'ALSUT'; })
-        .every(function (x) { return (state.essays[x.id] || {}).status === 'siap'; });
-      if (allAlsut && e.region === 'ALSUT') { confetti(200); toast('Semua 10 soal ALSUT siap! 🔥', 'Soal latihan UTS dosen sudah kamu kuasai.'); }
+      var hotList = D.essays.filter(function (x) { return x.region === META.hotRegion; });
+      var allHot = hotList.length && hotList.every(function (x) { return (state.essays[x.id] || {}).status === 'siap'; });
+      if (allHot && e.region === META.hotRegion) { confetti(200); toast('Semua ' + hotList.length + ' soal ' + META.hotRegion + ' siap! 🔥', 'Soal latihan UTS dosen sudah kamu kuasai.'); }
       else toast(e.region + ' #' + e.no + ' siap 💪', 'Lanjut ke soal berikutnya.');
     } else if (s === 'ragu') {
       toast(e.region + ' #' + e.no + ' ditandai ragu 🤔', 'Ulangi Pertanyaan Rinci, lalu coba tulis lagi.', 'warn');
@@ -733,10 +770,10 @@
     $('#materiList').innerHTML = D.materi.map(function (m) {
       var seen = {};
       var all = [m.intinya, m.analogi || '', m.table || '', m.ingat || ''].concat(m.points).join(' ');
-      var tagged = G.filter(function (g) { return (g.m || []).indexOf(m.no) !== -1 && !g.nolink; });
+      var tagged = G.filter(function (g) { return mods(g).indexOf(m.no) !== -1 && !g.nolink; });
       var mTerms = termsIn(all, tagged);
       return '<article class="mod glass reveal" id="modul-' + m.no + '" data-no="' + m.no + '">' +
-        '<h3>Modul ' + m.no + ': ' + m.title + '</h3>' +
+        '<h3>' + (m.head || ('Modul ' + m.no + ': ' + m.title)) + '</h3>' +
         '<div class="mod-intinya"><p><b>Intinya:</b> ' + fmtL(m.intinya, seen) + '</p>' + (m.analogi ? '<p><b>Perumpamaan:</b> ' + fmtL(m.analogi, seen) + '</p>' : '') + '</div>' +
         (m.table ? '<div class="tbl-scroll">' + fmtL(m.table, seen) + '</div>' : '') +
         '<ul>' + m.points.map(function (p) { return '<li>' + fmtL(p, seen) + '</li>'; }).join('') + '</ul>' +
@@ -772,13 +809,13 @@
     if (!g) return;
     if (popFor === el && !pop.hidden) { hidePop(); return; }
     popFor = el;
-    var mods = (g.m || []).length ? '<span class="tp-m">Modul ' + g.m.join(', ') + '</span>' : '';
+    var mm = mods(g).length ? '<span class="tp-m">Modul ' + mods(g).join(', ') + '</span>' : '';
     pop.innerHTML = '<div class="tp-h"><b>' + esc(g.t) + '</b><button class="tp-x" type="button" aria-label="Tutup">×</button></div>' +
       (g.l ? '<div class="tp-l">Kepanjangan: ' + esc(g.l) + '</div>' : '') +
       '<p>' + esc(g.f) + '</p>' +
       (g.c ? '<p class="tp-c">💡 Contoh: ' + esc(g.c) + '</p>' : '') +
       (g.n ? '<p class="tp-n">ℹ️ ' + esc(g.n) + '</p>' : '') +
-      '<div class="tp-f">' + mods + '<a href="#istilah-' + g.id + '" class="tp-more" data-go="' + g.id + '">Buka di kamus →</a></div>';
+      '<div class="tp-f">' + mm + '<a href="#istilah-' + g.id + '" class="tp-more" data-go="' + g.id + '">Buka di kamus →</a></div>';
     pop.hidden = false;
     var r = el.getBoundingClientRect(), w = Math.min(330, window.innerWidth - 24);
     pop.style.width = w + 'px';
@@ -828,7 +865,7 @@
             '<p>' + esc(g.f) + '</p>' +
             (g.c ? '<p class="kc-c">💡 ' + esc(g.c) + '</p>' : '') +
             (g.n ? '<p class="kc-c">ℹ️ ' + esc(g.n) + '</p>' : '') +
-            ((g.m || []).length ? '<div class="kc-m">Modul ' + g.m.join(', ') + '</div>' : '') + '</article>';
+            (mods(g).length ? '<div class="kc-m">Modul ' + mods(g).join(', ') + '</div>' : '') + '</article>';
         }).join('') + '</div></div>';
     }).join('');
     $('#kamusList').innerHTML = html;
@@ -909,10 +946,10 @@
     });
 
     var kp = $('#kisiProgress');
-    kp.innerHTML = '<b>Kesiapan per kisi-kisi UTS</b>' + D.kisi.map(function (k) {
+    kp.innerHTML = '<b>Kesiapan per ' + (META.kisiWord || 'kisi-kisi').toLowerCase() + ' UTS</b>' + D.kisi.map(function (k) {
       var list = k.soal.map(function (id) { return essayById[id]; });
       var p = pct(essayScore(list), list.length);
-      return '<div class="kp-row"><span>Kisi ' + k.id + ': ' + k.title + '</span><div class="bar"><i style="width:' + p + '%"></i></div><span>' + p + '%</span></div>';
+      return '<div class="kp-row"><span>' + (META.kisiShort || 'Kisi') + ' ' + k.id + ': ' + k.title + '</span><div class="bar"><i style="width:' + p + '%"></i></div><span>' + p + '%</span></div>';
     }).join('');
     D.kisi.forEach(function (k) {
       var bar = $('[data-kisi-bar="' + k.id + '"]');
@@ -998,7 +1035,78 @@
     }
   });
 
+  /* ================= Teks per mata kuliah & pemilih course ================= */
+  function setHTML(sel, html) { var el = $(sel); if (el && html != null) el.innerHTML = html; }
+  function renderMeta() {
+    if (META.title) document.title = META.title;
+    setHTML('#brandName', META.name);
+    setHTML('#heroEyebrow', META.eyebrow);
+    setHTML('#heroTitle', 'Belajar UTS <span class="grad">' + esc(META.name || '') + '</span>, satu soal demi satu soal.');
+    setHTML('#heroLead', META.heroLead);
+    setHTML('#pipeTitle', META.pipeTitle);
+    setHTML('#soalTitle', META.soalTitle);
+    setHTML('#soalDesc', META.soalDesc);
+    setHTML('#filledNote', META.filledNote);
+    setHTML('#materiTitle', META.materiTitle);
+    setHTML('#footerSources', META.sources);
+    var kh = $('#kisiHead');
+    if (kh) { kh.hidden = !META.kisiHead; kh.innerHTML = META.kisiHead || ''; }
+    var c = COURSES[COURSE];
+    if (c) $('#brandLogo').textContent = c.icon;
+
+    // Pemilih mata kuliah
+    var sw = $('#courseSwitch');
+    sw.innerHTML = Object.keys(COURSES).map(function (id) {
+      var x = COURSES[id];
+      return '<button type="button" class="cs-btn' + (id === COURSE ? ' active' : '') + '" data-c="' + id + '" aria-pressed="' + (id === COURSE) + '" title="' + esc(x.name) + '">' +
+        '<span aria-hidden="true">' + x.icon + '</span> ' + esc(x.short) + '</button>';
+    }).join('');
+    sw.addEventListener('click', function (e) {
+      var b = e.target.closest('.cs-btn');
+      if (!b || b.dataset.c === COURSE) return;
+      try { localStorage.setItem('utsCourse', b.dataset.c); } catch (err) { /* mode privat */ }
+      document.body.classList.add('leaving');
+      var go = function () { location.href = location.pathname + '?c=' + encodeURIComponent(b.dataset.c); };
+      if (reduceMotion) go(); else setTimeout(go, 260);
+    });
+
+    // Filter region
+    $('#regionChips').innerHTML = '<button class="chip active" data-r="all" type="button">Semua</button>' +
+      (META.regions || []).map(function (r) {
+        return '<button class="chip" data-r="' + esc(r.id) + '" type="button">' + esc(r.label) + '</button>';
+      }).join('');
+
+    // Info & hitung mundur ujian
+    var ex = META.exam, box = $('#examInfo');
+    if (ex && box) {
+      box.hidden = false;
+      var tick = function () {
+        var diff = new Date(ex.at).getTime() - Date.now(), txt;
+        if (isNaN(diff)) txt = '';
+        else if (diff <= 0) txt = 'Ujian sudah dimulai/selesai. Semoga lancar! 🍀';
+        else {
+          var d = Math.floor(diff / 864e5), h = Math.floor(diff % 864e5 / 36e5), mi = Math.floor(diff % 36e5 / 6e4);
+          txt = '⏳ ' + (d ? d + ' hari ' : '') + h + ' jam ' + mi + ' menit lagi';
+        }
+        box.innerHTML = '<span class="ex-l">🗓️ <b>UTS</b> ' + esc(ex.label) + '</span>' +
+          '<span class="ex-f">📝 ' + esc(ex.format) + ' · 📚 ' + esc(ex.scope) + '</span>' +
+          (txt ? '<span class="ex-c">' + txt + '</span>' : '');
+      };
+      tick();
+      setInterval(tick, 30000);
+    }
+    if (c) {
+      try {
+        if (window.sessionStorage.getItem('utsShownCourse') !== COURSE) {
+          window.sessionStorage.setItem('utsShownCourse', COURSE);
+          setTimeout(function () { toast(c.icon + ' ' + c.name, 'Semua soal, drill, flashcard, materi, dan kamus mengikuti mata kuliah ini.'); }, 700);
+        }
+      } catch (e) { /* abaikan */ }
+    }
+  }
+
   /* ================= Mulai ================= */
+  renderMeta();
   renderHero();
   renderPlan();
   renderKisi();

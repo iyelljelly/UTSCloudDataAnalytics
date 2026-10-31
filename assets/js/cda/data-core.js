@@ -114,3 +114,30 @@ UTS.contekan = [
   ['Scaling EMR, Lambda, atau endpoint SageMaker', 'Application Auto Scaling'],
   ['Menulis infrastruktur sebagai kode', 'CloudFormation / CDK']
 ].map(function (r) { return { need: r[0], use: r[1] }; });
+
+/* Teks & pengaturan halaman khusus mata kuliah ini. */
+UTS.meta = {
+  course: 'cda',
+  name: 'Cloud Data Analytics',
+  title: 'Belajar UTS Cloud Data Analytics',
+  eyebrow: 'AWS Academy Data Engineering · Modul 1-8',
+  heroLead: 'Semua soal quiz dari dosen dipecah jadi pertanyaan kecil yang rinci, lengkap dengan latihan menulis jawaban, cek kata kunci otomatis, drill, flashcard, dan contekan layanan AWS.',
+  pipeTitle: 'Data itu seperti air 💧 klik tiap tahap',
+  storageKey: 'utsCDA.v1',
+  moduleKey: 'm',
+  regionOrder: ['ALSUT', 'KMG'],
+  regions: [
+    { id: 'ALSUT', label: 'ALSUT · Soal Latihan UTS' },
+    { id: 'KMG', label: 'KMG · Quiz' }
+  ],
+  hotRegion: 'ALSUT',
+  hotTitle: 'Sama persis dengan Soal Latihan UTS dari dosen',
+  kisiWord: 'Kisi-kisi',
+  kisiShort: 'Kisi',
+  soalTitle: '🔥 Soal Quiz Dosen: pecah jadi pertanyaan rinci',
+  soalDesc: 'Soal <b>ALSUT</b> sama persis dengan file <i>Soal Latihan UTS</i> dari dosen. Soal <b>KMG</b> adalah quiz sebelum UTS dengan konsep yang sama. Klik kartu kisi-kisi untuk menyaring soal.',
+  filledNote: 'Label <span class="filled-badge">Dilengkapi dari rangkuman</span> berarti bagian itu terpotong di PDF pembahasan, jadi isinya dilengkapi dari Rangkuman Modul 1-8.',
+  filledTitle: 'Bagian ini terpotong di PDF pembahasan, jadi dilengkapi dari Rangkuman Modul 1-8',
+  materiTitle: '📚 Materi ringkas Modul 1-8',
+  sources: 'Sumber materi: Rangkuman Super Singkat AWS Academy Data Engineering Modul 1-8, Soal Latihan UTS Cloud Data Analytics, dan Master Guide & Pembahasan Quiz Sebelum UTS (KMG & ALSUT).'
+};

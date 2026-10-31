@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Website belajar interaktif UTS Cloud Data Analytics (AWS Academy Data Engineering Modul 1-8)">
-  <title>Belajar UTS Cloud Data Analytics</title>
+  <meta name="description" content="Website belajar interaktif UTS: Cloud Machine Learning dan Cloud Data Analytics (AWS Academy)">
+  <title>Belajar UTS</title>
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
@@ -13,9 +13,10 @@
 
   <header class="topbar" id="topbar">
     <a class="brand" href="#hero">
-      <span class="brand-logo">☁️</span>
-      <span class="brand-text">UTS <b>Cloud Data Analytics</b></span>
+      <span class="brand-logo" id="brandLogo">☁️</span>
+      <span class="brand-text">UTS <b id="brandName"></b></span>
     </a>
+    <div class="course-switch" id="courseSwitch" role="group" aria-label="Pilih mata kuliah"></div>
     <nav class="mainnav" id="mainNav" aria-label="Navigasi bagian">
       <a href="#rencana">🗺️ Rencana</a>
       <a href="#soal">🔥 Soal Dosen</a>
@@ -37,9 +38,10 @@
     <section id="hero" class="hero">
       <div class="wrap hero-grid">
         <div class="hero-copy reveal">
-          <span class="eyebrow">AWS Academy Data Engineering · Modul 1-8</span>
-          <h1>Belajar UTS <span class="grad">Cloud Data Analytics</span>, satu soal demi satu soal.</h1>
-          <p class="lead">Semua soal quiz dari dosen dipecah jadi pertanyaan kecil yang rinci, lengkap dengan latihan menulis jawaban, cek kata kunci otomatis, drill, flashcard, dan contekan layanan AWS.</p>
+          <span class="eyebrow" id="heroEyebrow"></span>
+          <h1 id="heroTitle">Belajar UTS</h1>
+          <p class="lead" id="heroLead"></p>
+          <div class="exam-info" id="examInfo" hidden></div>
           <div class="hero-cta">
             <a href="#soal" class="btn primary">🔥 Mulai dari Soal Dosen</a>
             <a href="#drill" class="btn ghost">⚡ Drill cepat</a>
@@ -54,7 +56,7 @@
         <div class="hero-visual glass reveal" style="--d:150ms">
           <div class="visual-head">
             <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-            <span class="visual-title">Data itu seperti air 💧 klik tiap tahap</span>
+            <span class="visual-title" id="pipeTitle"></span>
           </div>
           <div class="pipeline" id="pipeline"></div>
           <div class="pipe-caption" id="pipeCaption" aria-live="polite"></div>
@@ -80,10 +82,11 @@
       <div class="wrap">
         <div class="sec-head reveal">
           <span class="eyebrow">Prioritas utama</span>
-          <h2>🔥 Soal Quiz Dosen: pecah jadi pertanyaan rinci</h2>
-          <p>Soal <b>ALSUT</b> sama persis dengan file <i>Soal Latihan UTS</i> dari dosen. Soal <b>KMG</b> adalah quiz sebelum UTS dengan konsep yang sama. Klik kartu kisi-kisi untuk menyaring soal.</p>
+          <h2 id="soalTitle"></h2>
+          <p id="soalDesc"></p>
         </div>
 
+        <p class="kisi-head glass reveal" id="kisiHead" hidden></p>
         <div class="kisi-grid" id="kisiGrid"></div>
 
         <div class="howto glass reveal">
@@ -95,11 +98,7 @@
         </div>
 
         <div class="toolbar reveal">
-          <div class="chips" id="regionChips" role="group" aria-label="Saring soal">
-            <button class="chip active" data-r="all" type="button">Semua</button>
-            <button class="chip" data-r="ALSUT" type="button">ALSUT · Soal Latihan UTS</button>
-            <button class="chip" data-r="KMG" type="button">KMG · Quiz</button>
-          </div>
+          <div class="chips" id="regionChips" role="group" aria-label="Saring soal per region"></div>
           <div class="toolbar-right">
             <span class="muted" id="essayCount"></span>
             <button class="btn ghost small" id="randomEssay" type="button">🎲 Soal acak</button>
@@ -107,7 +106,7 @@
         </div>
 
         <div id="essayList" class="essay-list"></div>
-        <p class="note">Label <span class="filled-badge">Dilengkapi dari rangkuman</span> berarti bagian itu terpotong di PDF pembahasan, jadi isinya dilengkapi dari Rangkuman Modul 1-8.</p>
+        <p class="note" id="filledNote"></p>
       </div>
     </section>
 
@@ -228,7 +227,7 @@
       <div class="wrap">
         <div class="sec-head reveal">
           <span class="eyebrow">Rangkuman super singkat</span>
-          <h2>📚 Materi ringkas Modul 1-8</h2>
+          <h2 id="materiTitle">📚 Materi ringkas</h2>
           <p>Istilah berwarna adalah stabilo dari rangkuman. Istilah bergaris titik-titik bisa diklik untuk melihat kepanjangan dan fungsinya. Di akhir tiap modul ada <b>📖 Kamus istilah</b> modul itu. Nyalakan Mode tebak untuk menyembunyikan stabilo, lalu klik satu per satu.</p>
         </div>
         <div class="toolbar reveal">
@@ -253,7 +252,7 @@
           <p>Semua istilah, singkatan, dan layanan AWS yang muncul di materi, lengkap dengan <b>kepanjangan</b>, <b>fungsi singkat</b>, dan contoh pemakaiannya. Di seluruh website, istilah dengan <span class="term-demo">garis titik-titik</span> bisa diklik untuk membuka penjelasan ini.</p>
         </div>
         <div class="kamus-tools glass reveal">
-          <input type="search" id="kamusSearch" class="kamus-search" placeholder="🔍 Cari istilah, misalnya RDS, enkripsi, streaming, database..." aria-label="Cari istilah">
+          <input type="search" id="kamusSearch" class="kamus-search" placeholder="🔍 Cari istilah, misalnya recall, overfitting, SageMaker, enkripsi..." aria-label="Cari istilah">
           <div class="chips" id="kamusCats"></div>
           <span class="muted" id="kamusCount"></span>
         </div>
@@ -280,7 +279,7 @@
 
   <footer class="footer">
     <div class="wrap">
-      <p>Sumber materi: Rangkuman Super Singkat AWS Academy Data Engineering Modul 1-8, Soal Latihan UTS Cloud Data Analytics, dan Master Guide & Pembahasan Quiz Sebelum UTS (KMG & ALSUT).</p>
+      <p id="footerSources"></p>
       <p class="muted">Semangat UTS! 💪 Progres disimpan di localStorage browser ini.</p>
     </div>
   </footer>
@@ -289,15 +288,7 @@
   <canvas id="confetti" aria-hidden="true"></canvas>
   <button id="toTop" class="to-top" type="button" aria-label="Kembali ke atas">↑</button>
 
-  <script src="assets/js/data-core.js"></script>
-  <script src="assets/js/data-alsut-a.js"></script>
-  <script src="assets/js/data-alsut-b.js"></script>
-  <script src="assets/js/data-kmg.js"></script>
-  <script src="assets/js/data-drill.js"></script>
-  <script src="assets/js/data-materi.js"></script>
-  <script src="assets/js/data-glosarium-a.js"></script>
-  <script src="assets/js/data-glosarium-b.js"></script>
-  <script src="assets/js/data-glosarium-c.js"></script>
-  <script src="assets/js/app.js"></script>
+  <!-- courses.js memilih mata kuliah lalu memuat data course itu + app.js -->
+  <script src="assets/js/courses.js"></script>
 </body>
 </html>
