@@ -16,7 +16,7 @@ Tidak perlu install apa pun. Unduh/clone repo ini, lalu buka `index.html` di bro
 | Bagian | Isi |
 | --- | --- |
 | 🗺️ Rencana | 5 langkah belajar berurutan dengan checklist |
-| 🔥 Soal Dosen | 16 soal esai: 10 ALSUT (sama dengan Soal Latihan UTS) + 6 Quiz KMG. Tiap soal punya **Pertanyaan Rinci**, **Latihan Jawab** dengan cek kata kunci otomatis, **Kunci Jawaban** yang dibuka per bagian, dan penilaian kesiapan |
+| 🔥 Soal Dosen | Tampilan buku: halaman kiri soal, kerangka, pertanyaan rinci & kata kunci wajib; halaman kanan kunci jawaban, latihan jawab & istilah. Pindah soal lewat tab atau tombol ← →. 16 soal esai: 10 ALSUT (sama dengan Soal Latihan UTS) + 6 Quiz KMG. Tiap soal punya **Pertanyaan Rinci**, **Latihan Jawab** dengan cek kata kunci otomatis, **Kunci Jawaban** yang dibuka per bagian, dan penilaian kesiapan |
 | ⚡ Drill | 113 soal pilihan ganda per modul, filter "pola soal ujian", streak, penjelasan, ulangi yang salah |
 | 🃏 Flashcard | 49 istilah dengan kartu flip 3D; kartu "Lupa" muncul lagi lebih cepat |
 | 📋 Contekan | Tabel "butuh apa, pakai apa" layanan AWS dengan mode tebak |

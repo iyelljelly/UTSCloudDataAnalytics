@@ -359,77 +359,126 @@
     });
   }
 
-  function essayHTML(e) {
+  /* ================= Buku soal: halaman kiri (soal & catatan) | halaman kanan (jawaban) ================= */
+  var curId = null, bookView = 'left', bookTab = 'kunci';
+  function eTermsOf(e) {
+    return termsIn([e.case || '', e.question, e.tip].concat(e.rinci.map(function (r) { return r.q + ' ' + r.a; }), e.a.map(function (x) { return x.h + ' ' + x.b; })).join(' '));
+  }
+  function bookHTML(e, idx, total) {
     var st = state.essays[e.id] || {};
-    var eTerms = termsIn([e.case || '', e.question, e.tip].concat(e.rinci.map(function (r) { return r.q + ' ' + r.a; }), e.a.map(function (x) { return x.h + ' ' + x.b; })).join(' '));
+    var eTerms = eTermsOf(e);
     var kis = e.kisi.map(function (k) { return '<span class="kchip">' + (META.kisiShort || 'Kisi') + ' ' + k + '</span>'; }).join(' · ');
     var rinci = e.rinci.map(function (r, i) {
       return '<div class="rinci-item" tabindex="0" role="button" aria-expanded="false" data-i="' + i + '">' +
         '<div class="rq"><span class="qn">' + (i + 1) + '</span><span>' + fmt(r.q) + '</span></div>' +
         '<div class="ra"><div>' + fmtL(r.a) + '</div></div></div>';
     }).join('');
-    var kunci = e.a.map(function (s) {
-      return '<div class="ans-sec locked" tabindex="0" role="button" aria-label="Buka bagian jawaban"><div class="ans-h">' + fmt(s.h) +
+    var kunci = e.a.map(function (s, i) {
+      return '<div class="ans-sec locked" tabindex="0" role="button" aria-label="Buka bagian jawaban ' + (i + 1) + '"><div class="ans-h"><span class="an">' + (i + 1) + '</span>' + fmt(s.h) +
         (s.filled ? '<span class="filled-badge" title="' + esc(META.filledTitle || 'Dilengkapi dari rangkuman') + '">Dilengkapi dari rangkuman</span>' : '') +
         '</div><div class="ans-b"><div class="tbl-scroll">' + fmtL(s.b) + '</div></div></div>';
     }).join('');
-    return '<article class="essay glass reveal" id="essay-' + e.id + '" data-id="' + e.id + '">' +
-      '<button class="essay-head" type="button" aria-expanded="false">' +
+    var wajib = e.keys.map(function (k) { return '<span class="must">' + esc(k.label) + '</span>'; }).join('');
+    var pg = idx * 2 + 1;
+    return '<article class="book-spread" id="essay-' + e.id + '" data-id="' + e.id + '" data-view="' + bookView + '">' +
+      '<header class="book-head">' +
+      '<button class="icon-btn book-nav" type="button" data-go="-1" aria-label="Soal sebelumnya"' + (idx === 0 ? ' disabled' : '') + '>‹</button>' +
       '<span class="essay-no ' + e.region.toLowerCase() + '">' + e.region + ' #' + e.no + '</span>' +
-      '<span class="essay-title">' + e.title + '<small>' + e.modul + ' · ' + kis + '</small></span>' +
+      '<span class="essay-title">' + e.title + '<small>' + e.modul + ' · ' + kis + ' · soal ' + (idx + 1) + ' dari ' + total + '</small></span>' +
       (e.region === META.hotRegion ? '<span class="hot" title="' + esc(META.hotTitle || '') + '">🔥</span>' : '') +
       '<span class="status-dot s-' + (st.status || 'none') + '" title="Status kesiapan"></span>' +
-      '<span class="chev" aria-hidden="true">▾</span></button>' +
-      '<div class="essay-body" hidden>' +
+      '<button class="icon-btn book-nav" type="button" data-go="1" aria-label="Soal berikutnya"' + (idx === total - 1 ? ' disabled' : '') + '>›</button>' +
+      '</header>' +
+      '<div class="page-switch" role="group" aria-label="Pilih halaman">' +
+      '<button type="button" class="ps-btn' + (bookView === 'left' ? ' active' : '') + '" data-view="left">📄 Soal & catatan</button>' +
+      '<button type="button" class="ps-btn' + (bookView === 'right' ? ' active' : '') + '" data-view="right">🔑 Jawaban</button></div>' +
+      '<div class="pages">' +
+      '<section class="page page-left" aria-label="Soal dan catatan">' +
+      '<div class="page-label">📄 Soal & catatan</div>' +
       (e.case ? '<div class="case-box">' + fmtL(e.case) + '</div>' : '') +
       '<div class="question-box"><span class="label">Pertanyaan ' + e.region + ' #' + e.no + '</span><div class="q-text">' + fmtL(e.question) + '</div></div>' +
-      '<div class="tabs" role="tablist">' +
-      '<button class="tab active" type="button" role="tab" data-tab="rinci">🧩 Pertanyaan Rinci <em>' + e.rinci.length + '</em></button>' +
-      '<button class="tab" type="button" role="tab" data-tab="latihan">✍️ Latihan Jawab</button>' +
-      '<button class="tab" type="button" role="tab" data-tab="kunci">🔑 Kunci Jawaban</button>' +
-      '<button class="tab" type="button" role="tab" data-tab="istilah">📖 Istilah <em>' + eTerms.length + '</em></button></div>' +
-      '<div class="panel" data-panel="rinci">' +
-      '<p class="hint">Soal besar ini dipecah jadi pertanyaan kecil. Jawab di kepala dulu, lalu klik untuk mengecek.</p>' +
-      '<div class="rinci-progress"><span class="rc">0</span>/' + e.rinci.length + ' dibuka <div class="bar"><i></i></div></div>' + rinci + '</div>' +
-      '<div class="panel" data-panel="latihan" hidden>' +
       '<div class="tip">🧭 <b>Kerangka jawaban:</b> ' + fmtL(e.tip) + '</div>' +
+      '<div class="note-block"><div class="nb-h">🧩 Pertanyaan rinci <span class="muted">· jawab di kepala, klik untuk cek</span></div>' +
+      '<div class="rinci-progress"><span class="rc">0</span>/' + e.rinci.length + ' dibuka <div class="bar"><i></i></div></div>' + rinci + '</div>' +
+      '<div class="note-block"><div class="nb-h">🎯 Kata kunci yang wajib muncul di jawaban</div><div class="musts">' + wajib + '</div></div>' +
+      '<div class="page-no">' + pg + '</div>' +
+      '</section>' +
+      '<section class="page page-right" aria-label="Jawaban">' +
+      '<div class="page-label">🔑 Spesifikasi jawaban</div>' +
+      '<div class="tabs" role="tablist">' +
+      '<button class="tab' + (bookTab === 'kunci' ? ' active' : '') + '" type="button" role="tab" data-tab="kunci">🔑 Kunci Jawaban <em>' + e.a.length + '</em></button>' +
+      '<button class="tab' + (bookTab === 'latihan' ? ' active' : '') + '" type="button" role="tab" data-tab="latihan">✍️ Latihan Jawab</button>' +
+      '<button class="tab' + (bookTab === 'istilah' ? ' active' : '') + '" type="button" role="tab" data-tab="istilah">📖 Istilah <em>' + eTerms.length + '</em></button></div>' +
+      '<div class="panel" data-panel="kunci"' + (bookTab === 'kunci' ? '' : ' hidden') + '>' +
+      '<div class="row"><p class="hint">Tiap bagian tertutup. Tebak isinya dulu, baru klik untuk membuka.</p><button class="btn ghost small btn-openall" type="button">Buka semua</button></div>' + kunci + '</div>' +
+      '<div class="panel" data-panel="latihan"' + (bookTab === 'latihan' ? '' : ' hidden') + '>' +
+      '<p class="hint">Tulis jawabanmu di sini sambil melihat soal & kerangka di halaman kiri.</p>' +
       '<textarea class="answer" placeholder="Tulis jawabanmu di sini seperti saat ujian..."></textarea>' +
       '<div class="row"><span class="muted wc">0 kata</span><button class="btn primary small btn-check" type="button">🔍 Cek kata kunci</button></div>' +
       '<div class="kw-result" hidden></div></div>' +
-      '<div class="panel" data-panel="istilah" hidden><p class="hint">Semua istilah & layanan yang muncul di soal ini, lengkap dengan kepanjangan dan fungsinya. Pakai saat menulis jawaban supaya tidak salah sebut.</p>' + termListHTML(eTerms) + '</div>' +
-      '<div class="panel" data-panel="kunci" hidden>' +
-      '<div class="row"><p class="hint">Tiap bagian tertutup. Tebak isinya dulu, baru klik untuk membuka.</p><button class="btn ghost small btn-openall" type="button">Buka semua</button></div>' + kunci + '</div>' +
-      '<div class="rate"><span>Seberapa siap kamu menjawab soal ini di ujian?</span><div class="rate-btns">' +
+      '<div class="panel" data-panel="istilah"' + (bookTab === 'istilah' ? '' : ' hidden') + '><p class="hint">Istilah & layanan di soal ini, lengkap dengan kepanjangan dan fungsinya.</p>' + termListHTML(eTerms) + '</div>' +
+      '<div class="page-no">' + (pg + 1) + '</div>' +
+      '</section></div>' +
+      '<footer class="rate"><span>Seberapa siap kamu menjawab soal ini di ujian?</span><div class="rate-btns">' +
       ['lupa', 'ragu', 'siap'].map(function (s) {
         var label = { lupa: '😵 Belum bisa', ragu: '🤔 Ragu', siap: '💪 Siap' }[s];
         return '<button class="btn rate-btn r-' + s + (st.status === s ? ' on' : '') + '" type="button" data-s="' + s + '">' + label + '</button>';
-      }).join('') + '</div></div></div></article>';
+      }).join('') + '</div></footer></article>';
   }
 
-  function renderEssayList() {
+  function renderTabs(list) {
+    var box = $('#bookTabs');
+    box.innerHTML = list.map(function (e) {
+      var st = (state.essays[e.id] || {}).status || 'none';
+      return '<button type="button" role="tab" class="btab ' + e.region.toLowerCase() + (e.id === curId ? ' active' : '') + '" data-id="' + e.id + '" aria-selected="' + (e.id === curId) + '" title="' + esc(e.title) + '">' +
+        '<b>' + e.region + ' ' + e.no + '</b><i class="status-dot s-' + st + '"></i></button>';
+    }).join('');
+    var act = $('.btab.active', box);
+    if (act) box.scrollTo({ left: act.offsetLeft - box.clientWidth / 2 + act.clientWidth / 2, behavior: reduceMotion ? 'auto' : 'smooth' });
+  }
+
+  function renderEssayList(dir) {
     var list = filteredEssays();
+    $('#essayCount').textContent = list.length + ' soal';
+    if (!list.length) {
+      $('#bookTabs').innerHTML = '';
+      $('#essayList').innerHTML = '<p class="hint book-empty">Tidak ada soal dengan filter ini.</p>';
+      return;
+    }
+    if (!list.some(function (e) { return e.id === curId; })) {
+      var saved = state.curEssay && list.some(function (e) { return e.id === state.curEssay; }) ? state.curEssay : list[0].id;
+      curId = saved;
+    }
+    var idx = list.map(function (e) { return e.id; }).indexOf(curId), e = list[idx];
     var box = $('#essayList');
-    box.innerHTML = list.map(essayHTML).join('');
-    list.forEach(function (e) {
-      var st = state.essays[e.id];
-      var ta = $('#essay-' + e.id + ' textarea');
-      if (st && st.draft) { ta.value = st.draft; $('#essay-' + e.id + ' .wc').textContent = wordCount(st.draft) + ' kata'; }
-    });
-    $('#essayCount').textContent = 'Menampilkan ' + list.length + ' soal';
-    observeReveals(box);
+    box.innerHTML = bookHTML(e, idx, list.length);
+    var st = state.essays[e.id];
+    if (st && st.draft) { $('textarea', box).value = st.draft; $('.wc', box).textContent = wordCount(st.draft) + ' kata'; }
+    renderTabs(list);
+    if (dir) restartAnim($('.pages', box), dir > 0 ? 'turn-next' : 'turn-prev');
   }
-
-  function openEssay(card, open) {
-    var body = $('.essay-body', card), head = $('.essay-head', card);
-    var willOpen = open === undefined ? body.hidden : open;
-    body.hidden = !willOpen;
-    card.classList.toggle('open', willOpen);
-    head.setAttribute('aria-expanded', willOpen);
+  function showEssay(id, dir) {
+    if (id === curId) return;
+    curId = id;
+    state.curEssay = id; save();
+    renderEssayList(dir || 1);
+  }
+  function stepEssay(d) {
+    var list = filteredEssays(), i = list.map(function (e) { return e.id; }).indexOf(curId) + d;
+    if (i < 0 || i >= list.length) { toast(d > 0 ? 'Ini soal terakhir 📕' : 'Ini soal pertama 📗', 'Pakai tab di atas buku untuk lompat ke soal lain.'); return; }
+    showEssay(list[i].id, d);
   }
   function switchTab(card, name) {
+    bookTab = name;
     $$('.tab', card).forEach(function (t) { t.classList.toggle('active', t.dataset.tab === name); });
     $$('.panel', card).forEach(function (p) { p.hidden = p.dataset.panel !== name; });
     if (name === 'latihan') setTimeout(function () { $('textarea', card).focus({ preventScroll: true }); }, 50);
+  }
+  function setView(card, v) {
+    bookView = v;
+    card.dataset.view = v;
+    $$('.ps-btn', card).forEach(function (b) { b.classList.toggle('active', b.dataset.view === v); });
+    restartAnim($('.page-' + v, card), 'pop-in');
   }
   function toggleRinci(card, item) {
     var open = !item.classList.contains('open');
@@ -477,8 +526,10 @@
   function rateEssay(card, id, s) {
     state.essays[id] = Object.assign({}, state.essays[id], { status: s });
     $$('.rate-btn', card).forEach(function (b) { b.classList.toggle('on', b.dataset.s === s); });
-    var dot = $('.status-dot', card);
+    var dot = $('.book-head .status-dot', card);
     dot.className = 'status-dot s-' + s;
+    var tdot = $('.btab[data-id="' + id + '"] .status-dot');
+    if (tdot) tdot.className = 'status-dot s-' + s;
     save();
     var e = essayById[id];
     if (s === 'siap') {
@@ -496,10 +547,11 @@
 
   var essayList = $('#essayList');
   essayList.addEventListener('click', function (ev) {
-    var card = ev.target.closest('.essay');
+    var card = ev.target.closest('.book-spread');
     if (!card) return;
     var id = card.dataset.id, t;
-    if (ev.target.closest('.essay-head')) { openEssay(card); return; }
+    if ((t = ev.target.closest('.book-nav'))) { stepEssay(+t.dataset.go); return; }
+    if ((t = ev.target.closest('.ps-btn'))) { setView(card, t.dataset.view); return; }
     if ((t = ev.target.closest('.tab'))) { switchTab(card, t.dataset.tab); return; }
     if ((t = ev.target.closest('.rinci-item'))) { toggleRinci(card, t); return; }
     if (ev.target.closest('.btn-openall')) { $$('.ans-sec.locked', card).forEach(unlock); return; }
@@ -515,7 +567,7 @@
   var draftTimer;
   essayList.addEventListener('input', function (ev) {
     if (!ev.target.matches('textarea')) return;
-    var card = ev.target.closest('.essay'), id = card.dataset.id, val = ev.target.value;
+    var card = ev.target.closest('.book-spread'), id = card.dataset.id, val = ev.target.value;
     $('.wc', card).textContent = wordCount(val) + ' kata';
     clearTimeout(draftTimer);
     draftTimer = setTimeout(function () {
@@ -526,13 +578,17 @@
   $('#randomEssay').addEventListener('click', function () {
     var list = filteredEssays();
     if (!list.length) return;
-    var e = list[Math.floor(Math.random() * list.length)];
-    var card = $('#essay-' + e.id);
-    $$('.essay.open').forEach(function (c) { if (c !== card) openEssay(c, false); });
-    openEssay(card, true);
-    card.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-    restartAnim(card, 'flash-hl');
+    var others = list.filter(function (x) { return x.id !== curId; });
+    var e = (others.length ? others : list)[Math.floor(Math.random() * (others.length || list.length))];
+    showEssay(e.id, 1);
+    $('#bookTabs').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
     toast('🎲 ' + e.region + ' #' + e.no, e.title);
+  });
+  $('#bookTabs').addEventListener('click', function (ev) {
+    var t = ev.target.closest('.btab');
+    if (!t) return;
+    var list = filteredEssays().map(function (e) { return e.id; });
+    showEssay(t.dataset.id, list.indexOf(t.dataset.id) >= list.indexOf(curId) ? 1 : -1);
   });
 
   /* ================= Drill ================= */
@@ -1019,7 +1075,8 @@
   /* ================= Keyboard ================= */
   document.addEventListener('keydown', function (e) {
     if (e.target.matches('textarea, input, select') || e.metaKey || e.ctrlKey || e.altKey) return;
-    var flashSec = $('#flash'), drillSec = $('#drill');
+    var flashSec = $('#flash'), drillSec = $('#drill'), soalSec = $('#essayList');
+    if (inView(soalSec) && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) { e.preventDefault(); stepEssay(e.key === 'ArrowRight' ? 1 : -1); return; }
     if (inView(flashSec) && fq.length) {
       if (e.key === ' ') { e.preventDefault(); flipCard(); return; }
       if (e.key === 'ArrowRight') { $('#flashNext').click(); return; }
