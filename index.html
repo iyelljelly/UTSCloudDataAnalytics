@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Website belajar interaktif UTS: Cloud Machine Learning dan Cloud Data Analytics (AWS Academy)">
+  <title>Belajar UTS</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <div id="scrollProgress" aria-hidden="true"></div>
+  <div class="bg-blobs" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="topbar" id="topbar">
+    <a class="brand" href="#hero">
+      <span class="brand-logo" id="brandLogo">☁️</span>
+      <span class="brand-text">UTS <b id="brandName"></b></span>
+    </a>
+    <div class="course-switch" id="courseSwitch" role="group" aria-label="Pilih mata kuliah"></div>
+    <nav class="mainnav" id="mainNav" aria-label="Navigasi bagian">
+      <a href="#rencana">🗺️ Rencana</a>
+      <a href="#soal">🔥 Soal Dosen</a>
+      <a href="#drill">⚡ Drill</a>
+      <a href="#flash">🃏 Flashcard</a>
+      <a href="#contekan">📋 Contekan</a>
+      <a href="#materi">📚 Materi</a>
+      <a href="#kamus">📖 Kamus</a>
+      <a href="#progres">🏆 Progres</a>
+    </nav>
+    <div class="top-actions">
+      <span class="overall-pill" title="Progres belajar keseluruhan"><span id="overallPct">0%</span> siap</span>
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="Ganti tema terang/gelap">🌙</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section id="hero" class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy reveal">
+          <span class="eyebrow" id="heroEyebrow"></span>
+          <h1 id="heroTitle">Belajar UTS</h1>
+          <p class="lead" id="heroLead"></p>
+          <div class="exam-info" id="examInfo" hidden></div>
+          <div class="hero-cta">
+            <a href="#soal" class="btn primary">🔥 Mulai dari Soal Dosen</a>
+            <a href="#drill" class="btn ghost">⚡ Drill cepat</a>
+          </div>
+          <div class="stats">
+            <div class="stat"><b data-stat="essays">0</b><span>soal esai dosen</span></div>
+            <div class="stat"><b data-stat="rinci">0</b><span>pertanyaan rinci</span></div>
+            <div class="stat"><b data-stat="drill">0</b><span>soal drill</span></div>
+            <div class="stat"><b data-stat="flash">0</b><span>flashcard</span></div>
+          </div>
+        </div>
+        <div class="hero-visual glass reveal" style="--d:150ms">
+          <div class="visual-head">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="visual-title" id="pipeTitle"></span>
+          </div>
+          <div class="pipeline" id="pipeline"></div>
+          <div class="pipe-caption" id="pipeCaption" aria-live="polite"></div>
+        </div>
+      </div>
+      <a href="#rencana" class="scroll-hint" aria-label="Scroll ke bawah"><span></span></a>
+    </section>
+
+    <!-- RENCANA -->
+    <section id="rencana">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Rencana belajar malam ini</span>
+          <h2>Urutan paling efektif sebelum UTS</h2>
+          <p>Centang tiap langkah setelah selesai. Progresmu tersimpan otomatis di browser ini.</p>
+        </div>
+        <ol class="plan" id="planList"></ol>
+      </div>
+    </section>
+
+    <!-- SOAL DOSEN -->
+    <section id="soal">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Prioritas utama</span>
+          <h2 id="soalTitle"></h2>
+          <p id="soalDesc"></p>
+        </div>
+
+        <p class="kisi-head glass reveal" id="kisiHead" hidden></p>
+        <div class="kisi-grid" id="kisiGrid"></div>
+
+        <div class="howto glass reveal">
+          <b>Cara pakai tiap soal:</b>
+          <span class="step-pill">📕 Kiri: soal, kerangka & pertanyaan rinci</span>
+          <span class="step-pill">🔑 Kanan: kunci jawaban, latihan & istilah</span>
+          <span class="step-pill">↔️ Pindah soal lewat tab atau tombol <kbd>←</kbd> <kbd>→</kbd></span>
+          <span class="step-pill">💪 Nilai kesiapanmu di bawah buku</span>
+        </div>
+
+        <div class="toolbar reveal">
+          <div class="chips" id="regionChips" role="group" aria-label="Saring soal per region"></div>
+          <div class="toolbar-right">
+            <span class="muted" id="essayCount"></span>
+            <button class="btn ghost small" id="randomEssay" type="button">🎲 Soal acak</button>
+          </div>
+        </div>
+
+        <div class="book-tabs" id="bookTabs" role="tablist" aria-label="Pilih soal"></div>
+        <div id="essayList" class="book"></div>
+        <p class="note" id="filledNote"></p>
+      </div>
+    </section>
+
+    <!-- DRILL -->
+    <section id="drill">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Latihan kilat</span>
+          <h2>⚡ Drill pilihan ganda per modul</h2>
+          <p>Jawab cepat, lihat penjelasan, kumpulkan streak 🔥. Pakai tombol keyboard <kbd>1</kbd>-<kbd>4</kbd> untuk memilih dan <kbd>Enter</kbd> untuk lanjut.</p>
+        </div>
+        <div class="drill glass reveal" id="drillBox">
+          <div id="drillSetup">
+            <div class="setup-row">
+              <span class="setup-label">Modul</span>
+              <div class="chips" id="drillMods"></div>
+            </div>
+            <div class="setup-row">
+              <span class="setup-label">Fokus</span>
+              <div class="chips">
+                <button class="chip" id="drillHot" type="button" aria-pressed="false">🔥 Hanya pola soal ujian</button>
+              </div>
+            </div>
+            <div class="setup-row">
+              <span class="setup-label">Jumlah</span>
+              <div class="chips" id="drillCount">
+                <button class="chip active" data-c="10" type="button">10 soal</button>
+                <button class="chip" data-c="20" type="button">20 soal</button>
+                <button class="chip" data-c="all" type="button">Semua</button>
+              </div>
+            </div>
+            <div class="setup-foot">
+              <span class="muted" id="drillPoolInfo"></span>
+              <button class="btn primary" id="drillStart" type="button">Mulai drill →</button>
+            </div>
+          </div>
+          <div id="drillPlay" hidden></div>
+          <div id="drillResult" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FLASHCARD -->
+    <section id="flash">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Hafalan istilah</span>
+          <h2>🃏 Flashcard: tebak dulu, baru balik</h2>
+          <p>Klik kartu atau tekan <kbd>Spasi</kbd> untuk membalik. Kartu yang kamu tandai "Lupa" akan muncul lagi lebih cepat.</p>
+        </div>
+        <div class="flash-wrap reveal">
+          <div class="flash-meta">
+            <span id="flashCounter"></span>
+            <div class="flash-tools">
+              <button class="btn ghost small" id="flashShuffle" type="button">🔀 Acak</button>
+              <button class="btn ghost small" id="flashReset" type="button">↺ Ulang dek</button>
+            </div>
+          </div>
+          <div class="flip-card" id="flipCard" tabindex="0" role="button" aria-label="Kartu flashcard, klik untuk membalik">
+            <div class="flip-inner">
+              <div class="face front">
+                <span class="face-tag" id="flashTagFront">Istilah</span>
+                <p class="face-text" id="flashFront"></p>
+                <span class="face-hint">Ketuk untuk melihat jawaban ↻</span>
+              </div>
+              <div class="face back">
+                <span class="face-tag ok" id="flashTagBack">Jawaban</span>
+                <p class="face-text small" id="flashBack"></p>
+              </div>
+            </div>
+          </div>
+          <div class="flash-nav">
+            <button class="icon-btn" id="flashPrev" type="button" aria-label="Kartu sebelumnya">←</button>
+            <div class="rate-row">
+              <button class="btn rate r-lupa" data-r="lupa" type="button">😵 Lupa <small>1</small></button>
+              <button class="btn rate r-ragu" data-r="ragu" type="button">🤔 Ragu <small>2</small></button>
+              <button class="btn rate r-siap" data-r="paham" type="button">💪 Paham <small>3</small></button>
+            </div>
+            <button class="icon-btn" id="flashNext" type="button" aria-label="Kartu berikutnya">→</button>
+          </div>
+          <div class="flash-done glass" id="flashDone" hidden>
+            <div class="big-emoji">🎉</div>
+            <h3>Semua kartu sudah kamu pahami!</h3>
+            <p>Ulang dek kalau mau mengetes lagi sebelum tidur.</p>
+            <button class="btn primary" id="flashResetDone" type="button">↺ Ulang dek</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTEKAN -->
+    <section id="contekan">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Butuh apa, pakai apa</span>
+          <h2>📋 Contekan kilat layanan AWS</h2>
+          <p>Kolom layanan disembunyikan. Tebak layanannya, lalu klik untuk membuka; kepanjangan dan fungsinya ikut muncul. Sering keluar sebagai jawaban "layanan AWS yang sesuai".</p>
+        </div>
+        <div class="toolbar reveal">
+          <div class="chips">
+            <button class="chip active" id="ctTest" type="button" aria-pressed="true">🙈 Mode tebak</button>
+            <button class="chip" id="ctShuffle" type="button">🔀 Acak urutan</button>
+            <button class="chip" id="ctReset" type="button">↺ Tutup lagi</button>
+          </div>
+          <span class="muted" id="ctCounter"></span>
+        </div>
+        <div class="glass ct-wrap reveal">
+          <table class="tbl ct-table cloze-test" id="ctTable">
+            <thead><tr><th>Kalau butuh...</th><th>Pakai...</th><th>Kepanjangan & fungsinya</th></tr></thead>
+            <tbody id="ctBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- MATERI -->
+    <section id="materi">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Rangkuman super singkat</span>
+          <h2 id="materiTitle">📚 Materi ringkas</h2>
+          <p>Istilah berwarna adalah stabilo dari rangkuman. Istilah bergaris titik-titik bisa diklik untuk melihat kepanjangan dan fungsinya. Di akhir tiap modul ada <b>📖 Kamus istilah</b> modul itu. Nyalakan Mode tebak untuk menyembunyikan stabilo, lalu klik satu per satu.</p>
+        </div>
+        <div class="toolbar reveal">
+          <div class="chips">
+            <button class="chip" id="mtTest" type="button" aria-pressed="false">🙈 Mode tebak istilah</button>
+          </div>
+          <div class="chips" id="mtJump"></div>
+        </div>
+        <div class="timeline" id="timeline">
+          <div class="timeline-fill" id="timelineFill"></div>
+          <div id="materiList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KAMUS -->
+    <section id="kamus">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Biar tidak salah sebut</span>
+          <h2>📖 Kamus istilah & layanan AWS</h2>
+          <p>Semua istilah, singkatan, dan layanan AWS yang muncul di materi, lengkap dengan <b>kepanjangan</b>, <b>fungsi singkat</b>, dan contoh pemakaiannya. Di seluruh website, istilah dengan <span class="term-demo">garis titik-titik</span> bisa diklik untuk membuka penjelasan ini.</p>
+        </div>
+        <div class="kamus-tools glass reveal">
+          <input type="search" id="kamusSearch" class="kamus-search" placeholder="🔍 Cari istilah, misalnya recall, overfitting, SageMaker, enkripsi..." aria-label="Cari istilah">
+          <div class="chips" id="kamusCats"></div>
+          <span class="muted" id="kamusCount"></span>
+        </div>
+        <div id="kamusList"></div>
+      </div>
+    </section>
+
+    <!-- PROGRES -->
+    <section id="progres">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Mastery</span>
+          <h2>🏆 Progres kesiapan UTS</h2>
+          <p>Dihitung dari kesiapan soal dosen (40%), cakupan drill (30%), dan flashcard yang dipahami (30%).</p>
+        </div>
+        <div class="progress-grid" id="progressGrid"></div>
+        <div class="glass kisi-progress reveal" id="kisiProgress"></div>
+        <div class="reset-row">
+          <button class="btn ghost small danger" id="resetAll" type="button">Hapus semua progres</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p id="footerSources"></p>
+      <p class="muted">Semangat UTS! 💪 Progres disimpan di localStorage browser ini.</p>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+  <button id="toTop" class="to-top" type="button" aria-label="Kembali ke atas">↑</button>
+
+  <!-- courses.js memilih mata kuliah lalu memuat data course itu + app.js -->
+  <script src="assets/js/courses.js"></script>
+</body>
+</html>
